@@ -13,14 +13,14 @@ app.get('/api/hello', async (req, res) => {
     try {
         // For testing purposes, use a known valid public IP
         const testingIp = '102.89.44.217';  // Google's public DNS IP
-        const ipToUse = clientIp.includes('127.0.0.1') || clientIp.includes('::1') ? testingIp : clientIp;
+        //const ipToUse = clientIp.includes('127.0.0.1') || clientIp.includes('::1') ? testingIp : clientIp;
         console.log(`Client IP: ${clientIp}, IP Used: ${ipToUse}`);
 
         // Get location information based on IP address using ipgeolocation.io
         const geoResponse = await axios.get(`https://api.ipgeolocation.io/ipgeo`, {
             params: {
                 apiKey,
-                ip: ipToUse
+                ip: clientIp
             }
         });
         console.log('Geo Response:', geoResponse.data);
