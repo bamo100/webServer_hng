@@ -10,14 +10,14 @@ function isLocalIp(ip) {
 
 app.get('/api/hello', async (req, res) => {
     const visitorName = req.query.visitor_name || 'Guest';
-    let clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     console.log(`Client IP: ${clientIp}`);
 
     // Handle local IPs
     if (isLocalIp(clientIp)) {
         console.log('Local IP detected, using fallback IP');
-        clientIp = '102.89.44.217';  // Example fallback public IP (Google's DNS server)
+       // clientIp = '102.89.44.217';  // Example fallback public IP (Google's DNS server)
     }
 
     try {
