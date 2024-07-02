@@ -2,43 +2,34 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 const port = process.env.PORT || 3000;
-const ipinfoApiKey = '352ad8bf8693ae';
 
-function isLocalIp(ip) {
-    return ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.');
-}
+// Replace with your actual ipgeolocation.io API key
+const apiKey = '4aab3fb8a0704b13a31b86f08a0f7802';
 
 app.get('/api/hello', async (req, res) => {
     const visitorName = req.query.visitor_name || 'Guest';
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-    console.log(`Client IP: ${clientIp}`);
-
-    // Handle local IPs
-    if (isLocalIp(clientIp)) {
-        console.log('Local IP detected, using fallback IP');
-       // clientIp = '102.89.44.217';  // Example fallback public IP (Google's DNS server)
-    }
-
     try {
-        // Get location information based on client's IP address
-        const geoUrl = `https://ipinfo.io/${clientIp}?token=${ipinfoApiKey}`;
-        // const geoUrl = 'https://ipinfo.io/102.89.44.217?token=352ad8bf8693ae'
-        console.log(`Geo URL: ${geoUrl}`);
+        // For testing purposes, use a known valid public IP
+        const testingIp = '102.89.44.217';  // Google's public DNS IP
+        const ipToUse = clientIp.includes('127.0.0.1') || clientIp.includes('::1') ? testingIp : clientIp;
+        console.log(`Client IP: ${clientIp}, IP Used: ${ipToUse}`);
 
-        const geoResponse = await axios.get(geoUrl);
+        // Get location information based on IP address using ipgeolocation.io
+        const geoResponse = await axios.get(`https://api.ipgeolocation.io/ipgeo`, {
+            params: {
+                apiKey,
+                ip: ipToUse
+            }
+        });
         console.log('Geo Response:', geoResponse.data);
 
-        if (!geoResponse.data.loc) {
-            throw new Error('Location data not available');
-        }
-
-        const [latitude, longitude] = geoResponse.data.loc.split(',');
-        const city = geoResponse.data.city;
-        const region = geoResponse.data.region;
+        const { city, state_prov: region, latitude, longitude } = geoResponse.data;
 
         // Validate if we have latitude and longitude
         if (!latitude || !longitude) {
+            console.error('Invalid latitude or longitude data:', geoResponse.data);
             throw new Error('Invalid latitude or longitude data');
         }
 
@@ -50,7 +41,6 @@ app.get('/api/hello', async (req, res) => {
                 current_weather: true
             }
         });
-
         console.log('Weather Response:', weatherResponse.data);
 
         const temperature = weatherResponse.data.current_weather.temperature;
@@ -59,7 +49,7 @@ app.get('/api/hello', async (req, res) => {
         const response = {
             client_ip: clientIp,
             location: city || region || 'Unknown',
-            greeting: `Hello, ${visitorName}! The temperature is ${temperature} degrees Celsius in ${city || region || 'your location'}.`
+            greeting: `Hello, ${visitorName}!, the temperature is ${temperature} degrees Celsius in ${city || region || 'your location'}`
         };
 
         res.json(response);
